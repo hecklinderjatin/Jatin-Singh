@@ -6,7 +6,7 @@ import { registerModel, unregisterModel, handleCollisions } from '../physics/col
 
 const AstronautModel = ({ position = [0, 0, 0], scale = 1 }) => {
   const modelRef = useRef();
-  const { scene } = useGLTF('/models/astronaut.glb');
+  const { scene } = useGLTF('https://jatin-singh-assets.s3.eu-north-1.amazonaws.com/models/astronaut.glb');
   const idRef = useRef(Math.random().toString(36).substr(2, 9));
 
   // Store velocity in a ref for stable mutation (unused for movement here)
