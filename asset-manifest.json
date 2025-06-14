@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Jatin-Singh/static/css/main.67090434.css",
+    "main.js": "/Jatin-Singh/static/js/main.48b227bb.js",
+    "static/js/453.d73b0aaa.chunk.js": "/Jatin-Singh/static/js/453.d73b0aaa.chunk.js",
+    "index.html": "/Jatin-Singh/index.html",
+    "main.67090434.css.map": "/Jatin-Singh/static/css/main.67090434.css.map",
+    "main.48b227bb.js.map": "/Jatin-Singh/static/js/main.48b227bb.js.map",
+    "453.d73b0aaa.chunk.js.map": "/Jatin-Singh/static/js/453.d73b0aaa.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.67090434.css",
+    "static/js/main.48b227bb.js"
+  ]
+}
