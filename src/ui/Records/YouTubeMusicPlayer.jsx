@@ -18,14 +18,24 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     const [apiError, setApiError] = useState('');
     const [playerMounted, setPlayerMounted] = useState(false);
     const [playlist, setPlaylist] = useState(defaultPlaylist);
+    const [youtubePlaylistId, setYoutubePlaylistId] = useState('');
+    const [playlistDetails, setPlaylistDetails] = useState(null);
+    const [userName, setUserName] = useState('');
+    const [loading, setLoading] = useState(false);
     
     // NEW: Mini Player state management
     const [showMiniPlayer, setShowMiniPlayer] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
 
     // Custom hooks
-    const { searchYouTube, playlistActions, addCustomSong } = usePlayerLogic();
-
+    const { searchYouTube, 
+        playlistActions, 
+        addCustomSong,        
+        addSongFromSearch,
+        youtubePlaylistAPI,
+        extractPlaylistId
+     } = usePlayerLogic();
+    
     // Mount animation
     useEffect(() => {
         setPlayerMounted(true);
@@ -50,6 +60,70 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             (error) => setApiError(error),
             (results) => setSearchResults(results)
         );
+    };
+
+     const handleLoadPlaylist = async () => {
+        const playlistUrl = prompt('Enter YouTube playlist URL:');
+        if (!playlistUrl) return;
+
+        setLoading(true);
+        try {
+            const result = await playlistActions.loadFromYoutubePlaylist(
+                playlistUrl, 
+                setPlaylist,
+                (progress) => console.log(progress) // Progress callback
+            );
+
+            setYoutubePlaylistId(result.playlistId);
+            setPlaylistDetails(result.details);
+            alert(`Loaded ${result.songCount} songs from "${result.details.title}"`);
+        } catch (error) {
+            alert('Failed to load playlist: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSync = async () => {
+        if (!youtubePlaylistId) {
+            alert('No YouTube playlist loaded');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const result = await playlistActions.syncWithYoutube(
+                youtubePlaylistId, 
+                playlist, 
+                setPlaylist
+            );
+
+            if (result.newSongsCount > 0) {
+                alert(`Added ${result.newSongsCount} new songs from YouTube playlist!`);
+            } else {
+                alert('Playlist is already up to date');
+            }
+        } catch (error) {
+            alert('Sync failed: ' + error.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+
+    // Add song manually
+    const handleAddSong = (song) => {
+        if (!userName.trim()) {
+            alert('Please enter your name first');
+            return;
+        }
+
+        const success = addSongFromSearch(playlist, song, setPlaylist, userName);
+        if (success) {
+            alert('Song added to playlist!');
+        } else {
+            alert('Song already exists in playlist');
+        }
     };
 
     const handleAddToPlaylist = (song) => {
@@ -526,8 +600,45 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                                             )}
                                         </div>
                                     ))}
+
+                                                                    {/* User name input */}
+                                    <div className="user-input">
+                                        <input
+                                            type="text"
+                                            placeholder="Enter your name"
+                                            value={userName}
+                                            onChange={(e) => setUserName(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {/* Playlist controls */}
+                                    <div className="playlist-controls">
+                                        <button onClick={handleLoadPlaylist} disabled={loading}>
+                                            {loading ? 'Loading...' : 'Load YouTube Playlist'}
+                                        </button>
+                                        
+                                        {youtubePlaylistId && (
+                                            <button onClick={handleSync} disabled={loading}>
+                                                {loading ? 'Syncing...' : 'Sync with YouTube'}
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Playlist info */}
+                                    {playlistDetails && (
+                                        <div className="playlist-info">
+                                            <h3>{playlistDetails.title}</h3>
+                                            <p>by {playlistDetails.channelTitle}</p>
+                                            <p>{playlist.length} songs</p>
+                                        </div>
+                                    )}
+
+
+
                                 </div>
                             )}
+
+                            
 
                             {/* Add Song View */}
                             {showAddSong && (
