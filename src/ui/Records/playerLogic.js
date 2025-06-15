@@ -30,6 +30,11 @@ export const usePlayerLogic = () => {
     const searchYouTube = async (query, onSearchStart, onSearchEnd, onError, onSuccess) => {
         const API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || 'YOUR_API_KEY_HERE';
 
+            // Debug logging
+            console.log('API Key exists:', !!API_KEY);
+            console.log('API Key starts with:', API_KEY.substring(0, 10) + '...');
+            console.log('Environment:', process.env.NODE_ENV);
+
         if (API_KEY === 'YOUR_API_KEY_HERE') {
             onError('Please add your YouTube API key to use search functionality');
             return;
