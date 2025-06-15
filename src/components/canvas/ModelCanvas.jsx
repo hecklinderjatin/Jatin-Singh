@@ -1,3 +1,4 @@
+// Updated ModelCanvas.js - Fixed to receive and pass userName
 import React, { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
@@ -8,7 +9,6 @@ import YouTubeMusicPlayer from '../../ui/Records/YouTubeMusicPlayer';
 import MiniPlayer from '../../ui/Records/MiniPlayer';
 import BenTenGame from '../../ui/Ben10Game/bentengame'; // Adjust path as needed
 
-
 import {
   AstronautModel,
   EarthModel,
@@ -18,7 +18,7 @@ import {
   RecordModel
 } from '../models';
 
-const ModelCanvas = () => {
+const ModelCanvas = ({ userName }) => { // Add userName prop here
   const [message, setMessage] = useState('');
   const [showMusicPlayer, setShowMusicPlayer] = useState(false);
   const [showMiniPlayer, setShowMiniPlayer] = useState(false);
@@ -26,6 +26,8 @@ const ModelCanvas = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showBenTenGame, setShowBenTenGame] = useState(false);
 
+  // Debug log to verify userName is received - remove this later
+  console.log('ModelCanvas received userName:', userName);
 
   const onClick = (modelName) => {
     handleModelClick(modelName, setMessage, setShowMusicPlayer, setShowBenTenGame);
@@ -66,9 +68,11 @@ const ModelCanvas = () => {
     <>
       {message && <ModelPopup message={message} />}
       
+      {/* Music Player with userName prop */}
       {showMusicPlayer && (
         <YouTubeMusicPlayer 
           onClose={handleMusicPlayerClose}
+          userName={userName} // Pass userName to music player
           onSongChange={setCurrentSong}
           onPlayingChange={setIsPlaying}
         />
@@ -87,10 +91,8 @@ const ModelCanvas = () => {
       )}
 
       {showBenTenGame && (
-          <BenTenGame
-          onClose={handleBenTenGameClose} />
+        <BenTenGame onClose={handleBenTenGameClose} />
       )}
-
 
       <Canvas
         orthographic
@@ -110,6 +112,20 @@ const ModelCanvas = () => {
 
         <OrbitControls enabled={false} />
       </Canvas>
+
+      {/* Debug info - remove this later */}
+      <div style={{ 
+        position: 'fixed', 
+        bottom: 0, 
+        left: 0, 
+        background: 'rgba(0,0,0,0.7)', 
+        color: 'white', 
+        padding: '5px 10px',
+        fontSize: '12px',
+        zIndex: 1000 
+      }}>
+        Debug: ModelCanvas userName = "{userName}"
+      </div>
     </>
   );
 };
