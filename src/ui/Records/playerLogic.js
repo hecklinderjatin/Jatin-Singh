@@ -11,24 +11,24 @@ const savePlaylistToLocalStorage = (playlist) => {
     }
 };
 
-// NEW FUNCTION: Helper to save the user's name to local storage
-const saveUserNameToLocalStorage = (userName) => {
-    try {
-        localStorage.setItem('cosmicVibesUserName', userName);
-    } catch (error) {
-        console.error("Error saving user name to local storage:", error);
-    }
-};
+// Removed: Helper to save the user's name to local storage
+// const saveUserNameToLocalStorage = (userName) => {
+//     try {
+//         localStorage.setItem('cosmicVibesUserName', userName);
+//     } catch (error) {
+//         console.error("Error saving user name to local storage:", error);
+//     }
+// };
 
-// NEW FUNCTION: Helper to load the user's name from local storage
-const loadUserNameFromLocalStorage = () => {
-    try {
-        return localStorage.getItem('cosmicVibesUserName') || ''; // Return empty string if not found
-    } catch (error) {
-        console.error("Error loading user name from local storage:", error);
-        return ''; // Fallback in case of error
-    }
-};
+// Removed: Helper to load the user's name from local storage
+// const loadUserNameFromLocalStorage = () => {
+//     try {
+//         return localStorage.getItem('cosmicVibesUserName') || ''; // Return empty string if not found
+//     } catch (error) {
+//         console.error("Error loading user name from local storage:", error);
+//         return ''; // Fallback in case of error
+//     }
+// };
 
 
 export const usePlayerLogic = () => {
@@ -150,20 +150,20 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // Custom song addition - MODIFIED to prompt for user name and save it
-    const addCustomSong = (playlist, setPlaylist, setUserName) => { // Added setUserName prop
+    // Custom song addition - MODIFIED to remove user name prompt
+    const addCustomSong = (playlist, setPlaylist) => { // Removed setUserName prop
         const urlInput = prompt('Enter YouTube URL or Video ID:');
         if (urlInput) {
             const extractedId = songUtils.extractVideoId(urlInput);
             const titleInput = prompt('Enter song title:');
             const artistInput = prompt('Enter artist name:');
             
-            // NEW: Prompt for user name and save it
-            const userNameInput = prompt('Enter your name (for display):');
-            if (userNameInput !== null) { // Check if user didn't cancel
-                saveUserNameToLocalStorage(userNameInput);
-                setUserName(userNameInput); // Update the user name state in the parent component
-            }
+            // Removed: Prompt for user name and save it
+            // const userNameInput = prompt('Enter your name (for display):');
+            // if (userNameInput !== null) { // Check if user didn't cancel
+            //     saveUserNameToLocalStorage(userNameInput);
+            //     setUserName(userNameInput); // Update the user name state in the parent component
+            // }
 
             const customSong = songUtils.createCustomSong(extractedId, titleInput, artistInput);
             playlistActions.addSong(playlist, customSong, setPlaylist);
@@ -174,6 +174,6 @@ export const usePlayerLogic = () => {
         searchYouTube,
         playlistActions,
         addCustomSong,
-        loadUserNameFromLocalStorage // NEW: Export the function to load user name
+        // Removed: loadUserNameFromLocalStorage
     };
 };
