@@ -1,0 +1,11 @@
+{
+  "AppSyncApiName": "jatinsingh",
+  "DynamoDBBillingMode": "PAY_PER_REQUEST",
+  "DynamoDBEnableServerSideEncryption": false,
+  "AuthCognitoUserPoolId": {
+    "Fn::GetAtt": [
+      "authjatinsingh05875ae4",
+      "Outputs.UserPoolId"
+    ]
+  }
+}

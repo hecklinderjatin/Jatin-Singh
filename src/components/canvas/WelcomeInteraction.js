@@ -1,100 +1,100 @@
-// WelcomeInteraction.js
 import React, { useState, useEffect } from 'react';
-import './WelcomeInteraction.css'; // Import the CSS file
+import './WelcomeInteraction.css';
+import { API, graphqlOperation } from 'aws-amplify';
+import { getTraveler } from './graphql/queries';
+import { createTraveler } from './graphql/mutations';
 
 const WelcomeInteraction = ({ onInteractionComplete }) => {
-  // State for the user's name
   const [userName, setUserName] = useState('');
-  // State for the current text being displayed during welcome interaction
-  const [welcomeText, setWelcomeText] = useState("Welcome, Traveler!");
-  // State to track if user is returning
+  const [welcomeText, setWelcomeText] = useState('Welcome, Traveler!');
   const [isReturningUser, setIsReturningUser] = useState(false);
-  // State to track if we should show input
   const [showInput, setShowInput] = useState(false);
+  const [uid, setUid] = useState(null);
 
+  // 1. Get or generate UID (from URL or localStorage)
   useEffect(() => {
-    // Check if user has visited before by looking for stored name
-    // Using a key in memory storage for this session
-    const storedName = getUserName();
-    
-    if (storedName) {
-      // Returning user
-      setIsReturningUser(true);
-      setUserName(storedName);
-      setWelcomeText(`Welcome back, ${storedName}!`);
-      
-      // Auto-complete interaction after showing welcome back message
-      const returnTimer = setTimeout(() => {
-        onInteractionComplete(storedName);
-      }, 2500);
-      
-      return () => clearTimeout(returnTimer);
-    } else {
-      // New user - show the original flow
-      const welcomeTimer = setTimeout(() => {
-        setWelcomeText("What is your name, Traveler?");
-        setShowInput(true);
-      }, 2500);
-      
-      return () => clearTimeout(welcomeTimer);
+    let savedUid = new URLSearchParams(window.location.search).get('uid') || localStorage.getItem('uid');
+    if (!savedUid) {
+      savedUid = crypto.randomUUID();
+      localStorage.setItem('uid', savedUid);
     }
-  }, [onInteractionComplete]);
+    setUid(savedUid);
+  }, []);
 
-  // localStorage functions for persistent storage
-  const getUserName = () => {
+  // 2. Load name from cloud or local storage
+  useEffect(() => {
+    if (!uid) return;
+
+    const loadName = async () => {
+      try {
+        const res = await API.graphql(graphqlOperation(getTraveler, { uid }));
+        const name = res.data.getTraveler?.name;
+        if (name) {
+          setIsReturningUser(true);
+          setUserName(name);
+          setWelcomeText(`Welcome back, ${name}!`);
+          setTimeout(() => {
+            onInteractionComplete(name);
+          }, 2500);
+          return;
+        }
+      } catch (e) {
+        console.warn("Couldn't fetch from cloud, using local fallback.", e);
+      }
+
+      // Fallback to local storage
+      const localName = localStorage.getItem('travelerName');
+      if (localName) {
+        setIsReturningUser(true);
+        setUserName(localName);
+        setWelcomeText(`Welcome back, ${localName}!`);
+        setTimeout(() => {
+          onInteractionComplete(localName);
+        }, 2500);
+      } else {
+        // First-time user
+        setTimeout(() => {
+          setWelcomeText("What is your name, Traveler?");
+          setShowInput(true);
+        }, 2500);
+      }
+    };
+
+    loadName();
+  }, [uid, onInteractionComplete]);
+
+  // Handle name change
+  const handleNameChange = (e) => setUserName(e.target.value);
+
+  // Save to cloud and local
+  const storeName = async (name) => {
+    localStorage.setItem('travelerName', name);
     try {
-      return localStorage.getItem('travelerName') || null;
-    } catch (error) {
-      console.error('Error reading from localStorage:', error);
-      return null;
+      await API.graphql(graphqlOperation(createTraveler, { input: { uid, name } }));
+    } catch (e) {
+      console.error('Failed to store in cloud', e);
     }
   };
 
-  const setStoredUserName = (name) => {
-    try {
-      localStorage.setItem('travelerName', name);
-    } catch (error) {
-      console.error('Error writing to localStorage:', error);
-    }
-  };
-
-  // Optional: Clear stored name (useful for testing or logout functionality)
-  const clearStoredUserName = () => {
-    try {
-      localStorage.removeItem('travelerName');
-    } catch (error) {
-      console.error('Error clearing localStorage:', error);
-    }
-  };
-
-  // Handle name input change
-  const handleNameChange = (e) => {
-    setUserName(e.target.value);
-  };
-
-  // Handle Enter key press
-  const handleNameSubmit = (e) => {
-    if (e.key === 'Enter' && userName.trim() !== '') {
+  // Handle Enter key
+  const handleNameSubmit = async (e) => {
+    if (e.key === 'Enter' && userName.trim()) {
       const trimmedName = userName.trim();
-      // Store the user's name for future visits
-      setStoredUserName(trimmedName);
-      // Pass the user's name to the parent component
+      await storeName(trimmedName);
       onInteractionComplete(trimmedName);
     }
   };
 
   return (
     <div className="welcome-overlay">
-      <p className="welcome-text">
-        {welcomeText}
-      </p>
+      <p className="welcome-text">{welcomeText}</p>
       {showInput && !isReturningUser && (
         <>
           <input
             type="text"
             value={userName}
             onChange={handleNameChange}
-            onKeyPress={handleNameSubmit}
+            onKeyDown={handleNameSubmit}
             placeholder="Enter your name..."
             className="name-input"
             autoFocus

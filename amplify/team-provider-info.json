@@ -1,0 +1,20 @@
+{
+  "dev": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-jatinsingh-dev-df9b7-authRole",
+      "UnauthRoleArn": "arn:aws:iam::985539771482:role/amplify-jatinsingh-dev-df9b7-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::985539771482:role/amplify-jatinsingh-dev-df9b7-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-jatinsingh-dev-df9b7-deployment",
+      "UnauthRoleName": "amplify-jatinsingh-dev-df9b7-unauthRole",
+      "StackName": "amplify-jatinsingh-dev-df9b7",
+      "StackId": "arn:aws:cloudformation:us-east-1:985539771482:stack/amplify-jatinsingh-dev-df9b7/87099620-49eb-11f0-9a80-122d8abf0ad3",
+      "AmplifyAppId": "d1x87ky0axzdlh"
+    },
+    "categories": {
+      "auth": {
+        "jatinsingh05875ae4": {}
+      }
+    }
+  }
+}
