@@ -30,10 +30,10 @@ export const usePlayerLogic = () => {
     const searchYouTube = async (query, onSearchStart, onSearchEnd, onError, onSuccess) => {
         const API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || 'YOUR_API_KEY_HERE';
 
-            // Debug logging
-            console.log('API Key exists:', !!API_KEY);
-            console.log('API Key starts with:', API_KEY.substring(0, 10) + '...');
-            console.log('Environment:', process.env.NODE_ENV);
+        // Debug logging
+        console.log('API Key exists:', !!API_KEY);
+        console.log('API Key starts with:', API_KEY.substring(0, 10) + '...');
+        console.log('Environment:', process.env.NODE_ENV);
 
         if (API_KEY === 'YOUR_API_KEY_HERE') {
             onError('Please add your YouTube API key to use search functionality');
@@ -94,17 +94,24 @@ export const usePlayerLogic = () => {
 
     // Playlist management functions
     const playlistActions = {
-        addSong: (playlist, song, setPlaylist) => {
+        addSong: (playlist, song, setPlaylist, addedBy = 'Anonymous') => {
             if (!songUtils.songExists(playlist, song.id)) {
-                setPlaylist([...playlist, song]);
+                // Add the addedBy field to the song object
+                const songWithUser = {
+                    ...song,
+                    addedBy: addedBy || 'Anonymous',
+                    addedAt: new Date().toISOString()
+                };
+                setPlaylist([...playlist, songWithUser]);
                 return true;
             }
             return false;
         },
 
-        removeSong: (playlist, songId, setPlaylist) => {
-            setPlaylist(playlist.filter(song => song.id !== songId));
-        },
+        // Remove the removeSong function entirely
+        // removeSong: (playlist, songId, setPlaylist) => {
+        //     setPlaylist(playlist.filter(song => song.id !== songId));
+        // },
 
         selectSong: (songId, setVideoId, setIsPlaying) => {
             setVideoId(songId);
@@ -122,22 +129,29 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // Custom song addition
+    // Custom song addition with user name
     const addCustomSong = (playlist, setPlaylist) => {
         const urlInput = prompt('Enter YouTube URL or Video ID:');
         if (urlInput) {
             const extractedId = songUtils.extractVideoId(urlInput);
             const titleInput = prompt('Enter song title:');
             const artistInput = prompt('Enter artist name:');
+            const userNameInput = prompt('Enter your name:');
 
             const customSong = songUtils.createCustomSong(extractedId, titleInput, artistInput);
-            playlistActions.addSong(playlist, customSong, setPlaylist);
+            playlistActions.addSong(playlist, customSong, setPlaylist, userNameInput);
         }
+    };
+
+    // Enhanced function to add song from search results with user name
+    const addSongFromSearch = (playlist, song, setPlaylist, userName) => {
+        return playlistActions.addSong(playlist, song, setPlaylist, userName);
     };
 
     return {
         searchYouTube,
         playlistActions,
-        addCustomSong
+        addCustomSong,
+        addSongFromSearch
     };
 };
