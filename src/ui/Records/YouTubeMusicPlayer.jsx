@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 // Make sure to import loadPlaylistFromLocalStorage from songs.js
 import { defaultPlaylist, playerConfig, loadPlaylistFromLocalStorage } from './songs.js';
+// Import loadUserNameFromLocalStorage from playerLogic.js
 import { usePlayerLogic } from './playerLogic.js';
 import MiniPlayer from './MiniPlayer.jsx';
 
@@ -19,40 +20,38 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [apiError, setApiError] = useState('');
     const [playerMounted, setPlayerMounted] = useState(false);
+    const [playlist, setPlaylist] = useState(loadPlaylistFromLocalStorage()); // Existing persistence
     
-    // *** CRUCIAL CHANGE HERE ***
-    // Initialize playlist state by loading from local storage
-    const [playlist, setPlaylist] = useState(loadPlaylistFromLocalStorage());
-    
+    // NEW STATE: For the user's name
+    const [userName, setUserName] = useState('');
+
     // NEW: Mini Player state management
     const [showMiniPlayer, setShowMiniPlayer] = useState(false);
     const [isMinimized, setIsMinimized] = useState(false);
 
     // Custom hooks
-    const { searchYouTube, playlistActions, addCustomSong } = usePlayerLogic();
+    // Destructure loadUserNameFromLocalStorage from usePlayerLogic
+    const { searchYouTube, playlistActions, addCustomSong, loadUserNameFromLocalStorage } = usePlayerLogic();
 
     // Mount animation
     useEffect(() => {
         setPlayerMounted(true);
+        // NEW: Load user name when component mounts
+        setUserName(loadUserNameFromLocalStorage());
     }, []);
 
-    // You might want to ensure that the currently playing video is always valid
-    // For example, if the videoId from the previous session isn't in the loaded playlist,
-    // you might want to default to the first song of the loaded playlist.
-    // This useEffect will run once after the initial render.
+    // Ensure currently playing video is valid (existing logic)
     useEffect(() => {
         if (!playlist.some(song => song.id === videoId) && playlist.length > 0) {
             setVideoId(playlist[0].id);
         } else if (playlist.length === 0 && videoId !== playerConfig.defaultVideoId) {
-            // If playlist becomes empty and a non-default song was playing,
-            // revert to default or clear player.
             setVideoId(playerConfig.defaultVideoId);
-            setIsPlaying(false); // Optionally stop playing
+            setIsPlaying(false);
         }
     }, [playlist, videoId]);
 
 
-    // Event handlers (no changes needed here as they call playlistActions which handles persistence)
+    // Event handlers (no direct changes needed here as they call playlistActions which handles persistence)
     const handleVideoSelect = (id) => {
         playlistActions.selectSong(id, setVideoId, setIsPlaying);
     };
@@ -77,7 +76,6 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     };
 
     const handleAddToPlaylist = (song) => {
-        // playlistActions.addSong internally calls setPlaylist AND saves to local storage
         playlistActions.addSong(playlist, song, setPlaylist);
         setSearchResults([]);
         setSearchQuery('');
@@ -86,13 +84,12 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     };
 
     const handleRemoveFromPlaylist = (songId) => {
-        // playlistActions.removeSong internally calls setPlaylist AND saves to local storage
         playlistActions.removeSong(playlist, songId, setPlaylist);
     };
 
     const handleCustomSong = () => {
-        // addCustomSong internally calls playlistActions.addSong which handles persistence
-        addCustomSong(playlist, setPlaylist);
+        // NEW: Pass setUserName to addCustomSong
+        addCustomSong(playlist, setPlaylist, setUserName);
     };
 
     const handleNextSong = () => {
@@ -117,8 +114,6 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     const handleCloseMiniPlayer = () => {
         setShowMiniPlayer(false);
         setIsMinimized(false);
-        // Optionally pause the music when closing mini player
-        // setIsPlaying(false);
     };
 
     const styles = {
@@ -151,7 +146,13 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             fontSize: '1.5rem',
             color: '#fff',
         },
-        // NEW: Button container for minimize and close buttons
+        // NEW: style for user name display
+        userNameDisplay: {
+            fontSize: '1rem',
+            color: '#ffc107',
+            marginRight: '20px',
+            fontWeight: 'bold',
+        },
         buttonContainer: {
             display: 'flex',
             gap: '10px',
@@ -175,7 +176,6 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                 transform: 'scale(1.05)',
             },
         },
-        // NEW: Minimize button style
         minimizeButton: {
             background: 'rgba(255, 193, 7, 0.2)',
             border: '1px solid rgba(255, 193, 7, 0.4)',
@@ -509,6 +509,8 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             }}>
                 <div style={styles.topBar}>
                     <h2 style={styles.title}>{playerConfig.title}</h2>
+                    {/* NEW: Display user name if available */}
+                    {userName && <span style={styles.userNameDisplay}>Hello, {userName}!</span>}
                     {/* UPDATED: Button container with minimize button */}
                     <div style={styles.buttonContainer}>
                         <button
@@ -634,6 +636,7 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                                                 {isSearching ? <span style={styles.loadingSpin}>⚙️</span> : '🔍'}
                                             </button>
                                         </div>
+                                        {/* Updated handleCustomSong call */}
                                         <button onClick={handleCustomSong} style={styles.customSongButton}>
                                             🔗 Add by YouTube URL or ID
                                         </button>

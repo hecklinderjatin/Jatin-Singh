@@ -1,8 +1,8 @@
 // playerLogic.js - Business logic and YouTube API integration
 
-import { songUtils, playerConfig } from './songs.js'; // Ensure songs.js is imported
+import { songUtils, playerConfig } from './songs.js';
 
-// NEW FUNCTION: Helper to save playlist to local storage
+// Helper function to save playlist to local storage
 const savePlaylistToLocalStorage = (playlist) => {
     try {
         localStorage.setItem('cosmicVibesPlaylist', JSON.stringify(playlist));
@@ -11,8 +11,28 @@ const savePlaylistToLocalStorage = (playlist) => {
     }
 };
 
+// NEW FUNCTION: Helper to save the user's name to local storage
+const saveUserNameToLocalStorage = (userName) => {
+    try {
+        localStorage.setItem('cosmicVibesUserName', userName);
+    } catch (error) {
+        console.error("Error saving user name to local storage:", error);
+    }
+};
+
+// NEW FUNCTION: Helper to load the user's name from local storage
+const loadUserNameFromLocalStorage = () => {
+    try {
+        return localStorage.getItem('cosmicVibesUserName') || ''; // Return empty string if not found
+    } catch (error) {
+        console.error("Error loading user name from local storage:", error);
+        return ''; // Fallback in case of error
+    }
+};
+
+
 export const usePlayerLogic = () => {
-    // Get video durations from YouTube API (no changes)
+    // Get video durations from YouTube API
     const getVideoDurations = async (videoIds, apiKey) => {
         try {
             const response = await fetch(
@@ -35,7 +55,7 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // YouTube API search function (no changes)
+    // YouTube API search function
     const searchYouTube = async (query, onSearchStart, onSearchEnd, onError, onSuccess) => {
         const API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || 'YOUR_API_KEY_HERE';
 
@@ -102,7 +122,7 @@ export const usePlayerLogic = () => {
             if (!songUtils.songExists(playlist, song.id)) {
                 const updatedPlaylist = [...playlist, song]; // Create new array
                 setPlaylist(updatedPlaylist); // Update React state
-                savePlaylistToLocalStorage(updatedPlaylist); // <--- NEW: Save to local storage
+                savePlaylistToLocalStorage(updatedPlaylist); // Save to local storage
                 return true;
             }
             return false;
@@ -111,7 +131,7 @@ export const usePlayerLogic = () => {
         removeSong: (playlist, songId, setPlaylist) => {
             const updatedPlaylist = playlist.filter(song => song.id !== songId); // Create new array
             setPlaylist(updatedPlaylist); // Update React state
-            savePlaylistToLocalStorage(updatedPlaylist); // <--- NEW: Save to local storage
+            savePlaylistToLocalStorage(updatedPlaylist); // Save to local storage
         },
 
         selectSong: (songId, setVideoId, setIsPlaying) => {
@@ -130,13 +150,20 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // Custom song addition (no changes, it uses addSong which is modified)
-    const addCustomSong = (playlist, setPlaylist) => {
+    // Custom song addition - MODIFIED to prompt for user name and save it
+    const addCustomSong = (playlist, setPlaylist, setUserName) => { // Added setUserName prop
         const urlInput = prompt('Enter YouTube URL or Video ID:');
         if (urlInput) {
             const extractedId = songUtils.extractVideoId(urlInput);
             const titleInput = prompt('Enter song title:');
             const artistInput = prompt('Enter artist name:');
+            
+            // NEW: Prompt for user name and save it
+            const userNameInput = prompt('Enter your name (for display):');
+            if (userNameInput !== null) { // Check if user didn't cancel
+                saveUserNameToLocalStorage(userNameInput);
+                setUserName(userNameInput); // Update the user name state in the parent component
+            }
 
             const customSong = songUtils.createCustomSong(extractedId, titleInput, artistInput);
             playlistActions.addSong(playlist, customSong, setPlaylist);
@@ -146,6 +173,7 @@ export const usePlayerLogic = () => {
     return {
         searchYouTube,
         playlistActions,
-        addCustomSong
+        addCustomSong,
+        loadUserNameFromLocalStorage // NEW: Export the function to load user name
     };
 };
