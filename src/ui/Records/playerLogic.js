@@ -1,9 +1,18 @@
 // playerLogic.js - Business logic and YouTube API integration
 
-import { songUtils, playerConfig } from './songs.js';
+import { songUtils, playerConfig } from './songs.js'; // Ensure songs.js is imported
+
+// NEW FUNCTION: Helper to save playlist to local storage
+const savePlaylistToLocalStorage = (playlist) => {
+    try {
+        localStorage.setItem('cosmicVibesPlaylist', JSON.stringify(playlist));
+    } catch (error) {
+        console.error("Error saving playlist to local storage:", error);
+    }
+};
 
 export const usePlayerLogic = () => {
-    // Get video durations from YouTube API
+    // Get video durations from YouTube API (no changes)
     const getVideoDurations = async (videoIds, apiKey) => {
         try {
             const response = await fetch(
@@ -26,7 +35,7 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // YouTube API search function
+    // YouTube API search function (no changes)
     const searchYouTube = async (query, onSearchStart, onSearchEnd, onError, onSuccess) => {
         const API_KEY = process.env.REACT_APP_YOUTUBE_API_KEY || 'YOUR_API_KEY_HERE';
 
@@ -87,18 +96,22 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // Playlist management functions
+    // Playlist management functions - MODIFIED
     const playlistActions = {
         addSong: (playlist, song, setPlaylist) => {
             if (!songUtils.songExists(playlist, song.id)) {
-                setPlaylist([...playlist, song]);
+                const updatedPlaylist = [...playlist, song]; // Create new array
+                setPlaylist(updatedPlaylist); // Update React state
+                savePlaylistToLocalStorage(updatedPlaylist); // <--- NEW: Save to local storage
                 return true;
             }
             return false;
         },
 
         removeSong: (playlist, songId, setPlaylist) => {
-            setPlaylist(playlist.filter(song => song.id !== songId));
+            const updatedPlaylist = playlist.filter(song => song.id !== songId); // Create new array
+            setPlaylist(updatedPlaylist); // Update React state
+            savePlaylistToLocalStorage(updatedPlaylist); // <--- NEW: Save to local storage
         },
 
         selectSong: (songId, setVideoId, setIsPlaying) => {
@@ -117,7 +130,7 @@ export const usePlayerLogic = () => {
         }
     };
 
-    // Custom song addition
+    // Custom song addition (no changes, it uses addSong which is modified)
     const addCustomSong = (playlist, setPlaylist) => {
         const urlInput = prompt('Enter YouTube URL or Video ID:');
         if (urlInput) {

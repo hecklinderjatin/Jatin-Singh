@@ -1,9 +1,11 @@
 // YouTubeMusicPlayer.jsx - Main UI Component
 
 import React, { useState, useEffect } from 'react';
-import { defaultPlaylist, playerConfig } from './songs.js';
+// Make sure to import loadPlaylistFromLocalStorage from songs.js
+import { defaultPlaylist, playerConfig, loadPlaylistFromLocalStorage } from './songs.js';
 import { usePlayerLogic } from './playerLogic.js';
 import MiniPlayer from './MiniPlayer.jsx';
+
 
 // Main YouTube Music Player Component
 const YouTubeMusicPlayer = ({ onClose }) => {
@@ -17,7 +19,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
     const [isSearching, setIsSearching] = useState(false);
     const [apiError, setApiError] = useState('');
     const [playerMounted, setPlayerMounted] = useState(false);
-    const [playlist, setPlaylist] = useState(defaultPlaylist);
+    
+    // *** CRUCIAL CHANGE HERE ***
+    // Initialize playlist state by loading from local storage
+    const [playlist, setPlaylist] = useState(loadPlaylistFromLocalStorage());
     
     // NEW: Mini Player state management
     const [showMiniPlayer, setShowMiniPlayer] = useState(false);
@@ -31,7 +36,23 @@ const YouTubeMusicPlayer = ({ onClose }) => {
         setPlayerMounted(true);
     }, []);
 
-    // Event handlers
+    // You might want to ensure that the currently playing video is always valid
+    // For example, if the videoId from the previous session isn't in the loaded playlist,
+    // you might want to default to the first song of the loaded playlist.
+    // This useEffect will run once after the initial render.
+    useEffect(() => {
+        if (!playlist.some(song => song.id === videoId) && playlist.length > 0) {
+            setVideoId(playlist[0].id);
+        } else if (playlist.length === 0 && videoId !== playerConfig.defaultVideoId) {
+            // If playlist becomes empty and a non-default song was playing,
+            // revert to default or clear player.
+            setVideoId(playerConfig.defaultVideoId);
+            setIsPlaying(false); // Optionally stop playing
+        }
+    }, [playlist, videoId]);
+
+
+    // Event handlers (no changes needed here as they call playlistActions which handles persistence)
     const handleVideoSelect = (id) => {
         playlistActions.selectSong(id, setVideoId, setIsPlaying);
     };
@@ -46,25 +67,31 @@ const YouTubeMusicPlayer = ({ onClose }) => {
         searchYouTube(
             searchQuery,
             () => setIsSearching(true),
-            () => setIsSearching(false),
+            () => setApiError(''), // Clear error on new search attempt
             (error) => setApiError(error),
-            (results) => setSearchResults(results)
+            (results) => {
+                setSearchResults(results);
+                setIsSearching(false); // Ensure search state is reset on success or fail
+            }
         );
     };
 
     const handleAddToPlaylist = (song) => {
+        // playlistActions.addSong internally calls setPlaylist AND saves to local storage
         playlistActions.addSong(playlist, song, setPlaylist);
         setSearchResults([]);
         setSearchQuery('');
         setShowAddSong(false);
-        setShowVideoList(true);
+        setShowVideoList(true); // Switch to playlist view after adding
     };
 
     const handleRemoveFromPlaylist = (songId) => {
+        // playlistActions.removeSong internally calls setPlaylist AND saves to local storage
         playlistActions.removeSong(playlist, songId, setPlaylist);
     };
 
     const handleCustomSong = () => {
+        // addCustomSong internally calls playlistActions.addSong which handles persistence
         addCustomSong(playlist, setPlaylist);
     };
 
@@ -143,6 +170,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.3s ease',
+            '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                transform: 'scale(1.05)',
+            },
         },
         // NEW: Minimize button style
         minimizeButton: {
@@ -158,6 +189,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.3s ease',
+            '&:hover': {
+                backgroundColor: 'rgba(255, 193, 7, 0.3)',
+                transform: 'scale(1.05)',
+            },
         },
         mainContentArea: {
             display: 'grid',
@@ -216,6 +251,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
+            '&:hover': {
+                borderColor: '#fff',
+                transform: 'scale(1.1)',
+            },
         },
         playPauseButton: {
             background: '#fff',
@@ -231,6 +270,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             alignItems: 'center',
             justifyContent: 'center',
             transition: 'all 0.2s ease',
+            '&:hover': {
+                transform: 'scale(1.05)',
+                boxShadow: '0 0 20px rgba(255, 255, 255, 0.7)',
+            },
         },
         rightPanel: {
             display: 'flex',
@@ -256,6 +299,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             fontSize: '1rem',
             borderBottom: '2px solid transparent',
             transition: 'color 0.3s ease, border-color 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                color: '#fff',
+                transform: 'scale(1.02)',
+            },
         },
         tabButtonActive: {
             color: '#fff',
@@ -295,6 +342,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             color: '#fff',
             fontSize: '0.9rem',
             transition: 'all 0.3s ease',
+            '&:focus': {
+                borderColor: '#3ea6ff',
+                boxShadow: '0 0 8px rgba(62, 166, 255, 0.5)',
+            },
         },
         searchButton: {
             background: '#3ea6ff',
@@ -305,6 +356,18 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             cursor: 'pointer',
             fontSize: '0.9rem',
             transition: 'background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease',
+            '&:hover': {
+                background: '#007bff',
+                transform: 'scale(1.05)',
+                boxShadow: '0 0 10px rgba(62, 166, 255, 0.7)',
+            },
+            '&:disabled': {
+                background: '#555',
+                cursor: 'not-allowed',
+                opacity: 0.7,
+                transform: 'none',
+                boxShadow: 'none',
+            },
         },
         customSongButton: {
             background: 'rgba(255, 255, 255, 0.1)',
@@ -316,6 +379,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             fontSize: '0.85rem',
             textAlign: 'center',
             transition: 'background 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                background: 'rgba(255, 255, 255, 0.2)',
+                transform: 'scale(1.02)',
+            },
         },
         searchResultsContainer: {
             marginTop: '15px',
@@ -328,6 +395,9 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             borderRadius: '8px',
             marginBottom: '5px',
             transition: 'background 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                background: 'rgba(255, 255, 255, 0.08)',
+            },
         },
         searchResultTitle: {
             flex: 1,
@@ -350,6 +420,10 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             justifyContent: 'center',
             gap: '5px',
             transition: 'background 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                background: '#218838',
+                transform: 'scale(1.05)',
+            },
         },
         playlistItem: {
             display: 'flex',
@@ -361,6 +435,9 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             marginBottom: '5px',
             border: '1px solid transparent',
             transition: 'background 0.3s ease, border-color 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                background: 'rgba(255, 255, 255, 0.05)',
+            },
         },
         playlistItemSelected: {
             background: 'rgba(62, 166, 255, 0.2)',
@@ -400,6 +477,11 @@ const YouTubeMusicPlayer = ({ onClose }) => {
             justifyContent: 'center',
             opacity: 0.5,
             transition: 'opacity 0.3s ease, background 0.3s ease, transform 0.2s ease',
+            '&:hover': {
+                opacity: 1,
+                background: 'rgba(220, 53, 69, 0.5)',
+                transform: 'scale(1.1)',
+            },
         },
         loadingSpin: {
             animation: 'spin 1s linear infinite',
@@ -429,8 +511,8 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                     <h2 style={styles.title}>{playerConfig.title}</h2>
                     {/* UPDATED: Button container with minimize button */}
                     <div style={styles.buttonContainer}>
-                        <button 
-                            onClick={handleMinimize} 
+                        <button
+                            onClick={handleMinimize}
                             style={styles.minimizeButton}
                             title="Minimize Player"
                         >
@@ -471,7 +553,7 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                                 </div>
                             </div>
                         </div>
-                        
+
                         {/* Info/Tips Box */}
                         <div style={styles.setupInfo}>
                             <strong>🔧 Setup:</strong> Add your YouTube API key in `playerLogic.js` or a `.env` file to enable search. Current functionality is limited to the default playlist.
@@ -533,7 +615,7 @@ const YouTubeMusicPlayer = ({ onClose }) => {
                             {showAddSong && (
                                 <div>
                                     {apiError && <div style={styles.apiError}>⚠️ {apiError}</div>}
-                                    
+
                                     <div style={styles.searchContainer}>
                                         <div style={styles.searchInputGroup}>
                                             <input

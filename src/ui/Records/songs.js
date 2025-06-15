@@ -7,6 +7,20 @@ export const defaultPlaylist = [
     { id: 'hTWKbfoikeg', title: 'Smells Like Teen Spirit', artist: 'Nirvana' }
 ];
 
+// NEW FUNCTION: Load playlist from local storage or fall back to default
+export const loadPlaylistFromLocalStorage = () => {
+    try {
+        const storedPlaylist = localStorage.getItem('cosmicVibesPlaylist');
+        // If there's something in local storage, parse it. Otherwise, return the default.
+        return storedPlaylist ? JSON.parse(storedPlaylist) : defaultPlaylist;
+    } catch (error) {
+        console.error("Error loading playlist from local storage:", error);
+        // In case of a parsing error, fall back to the default playlist
+        return defaultPlaylist;
+    }
+};
+
+
 export const playerConfig = {
     defaultVideoId: 'dQw4w9WgXcQ',
     title: 'Cosmic Vibes 🌌',
@@ -14,7 +28,7 @@ export const playerConfig = {
     maxSearchResults: 5
 };
 
-// Song utility functions
+// Song utility functions (no changes needed here, just keeping it complete)
 export const songUtils = {
     // Helper function to format ISO 8601 duration
     formatDuration: (duration) => {
@@ -59,8 +73,8 @@ export const songUtils = {
     // Create song object from search result
     createSongFromResult: (result) => ({
         id: result.id,
-        title: result.title.length > 50 
-            ? result.title.substring(0, 50) + '...' 
+        title: result.title.length > 50
+            ? result.title.substring(0, 50) + '...'
             : result.title,
         artist: result.artist || result.channelTitle,
         duration: result.duration || 'Unknown',
